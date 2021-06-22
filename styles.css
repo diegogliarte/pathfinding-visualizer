@@ -1,0 +1,34 @@
+
+.wrapper{
+    display: flex;
+    justify-content: center;
+}
+
+#board {
+    border-spacing: 0;
+    margin: 32px;
+    width: calc(25px*50px);
+    height: calc(25px*30px);
+
+}
+
+.cell.empty {
+    border: 1px solid gray;
+}
+
+.cell.wall {
+    background-color: black;
+}
+
+.cell.start_point {
+    background-color: blue;
+}
+
+.cell.end_point {
+    background-color: red;
+}
+
+tr{
+    margin: 0;
+    padding: 0;
+}
