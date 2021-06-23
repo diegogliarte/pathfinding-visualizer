@@ -1,34 +1,121 @@
-
-.wrapper{
-    display: flex;
-    justify-content: center;
+:root {
+    --text-main: 'Roboto Mono', monospace;
+    --black: #1f1f1f;
+    --white: #efefef;
 }
 
-#board {
-    border-spacing: 0;
-    margin: 32px;
-    width: calc(25px*50px);
-    height: calc(25px*30px);
+body {
+    background-color: var(--black);
+}
 
+.wrapper {
+    display: flex;
+    justify-content: space-evenly;
+    text-align: center;
+
+}
+
+.info {
+    justify-content: space-between;
+    flex-direction: column;
+}
+
+
+.subtitles {
+    color: var(--white);
+    font-size: 24px;
+    margin: 10px;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--white);
+    color: var(--black);
+}
+
+.create-maze {
+    margin: 10px;
+}
+
+
+#run-algorithm {
+    background-color: var(--white);
+    color: var(--black);
+    font-family: var(--text-main);
+    text-align: center;
+    font-size: 45px;
+    overflow: visible;
+    margin: 45px;
+    border-radius: 10px;
+    border: 0;
+    width: 25%;
+    padding: 10px;
+
+}
+
+#run-algorithm:hover {
+    background-color: var(--black);
+    color: var(--white);
+    border: 1px solid var(--white);
+}
+
+.cell:not(.draggable) {
+    transition: all .1s linear;
+}
+
+.cell:hover {
+    transform: scale(1.3);
 }
 
 .cell.empty {
+    background-color: var(--white);
     border: 1px solid gray;
 }
 
 .cell.wall {
     background-color: black;
+    animation-name: cell-born;
+    animation-duration: 1.5s;
 }
 
 .cell.start_point {
-    background-color: blue;
+    background-color: goldenrod;
+    border: 1px solid gray;
 }
+
+.cell.start_point::after {
+    color: var(--black);
+    font-size: 19px;
+    content: "α";
+}
+
 
 .cell.end_point {
-    background-color: red;
+    background-color: goldenrod;
+    border: 1px solid gray;
 }
 
-tr{
-    margin: 0;
-    padding: 0;
+.cell.end_point::after {
+    color: var(--black);
+    font-size: 19px;
+    content: "Ω";
 }
+
+
+table {
+    width: calc(70 * 24px);
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin-top: 50px;
+    border: 2px solid black;
+}
+
+td {
+
+}
+
+tr {
+    height: 24px;
+}
+

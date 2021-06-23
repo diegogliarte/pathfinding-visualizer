@@ -2,14 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Conway's Game of Life</title>
+    <title>Pathfinding Visualizer</title>
     <meta name="author" content="Diego González Liarte">
     <link rel="stylesheet" href="styles.css">
     <script src="scripts.js"></script>
 </head>
 <body>
     <div class="wrapper">
-        <table id="board">
+        <div class="wrapper info">
+            <div class="subtitles">Create maze</div>
+            <div class="options">
+                <button class="create-maze">Recursive Division</button>
+                <button class="create-maze">DFS</button>
+                <button class="create-maze">Kruskal</button>
+            </div>
+
+        </div>
+        <button id="run-algorithm">
+            Run Algorithm
+        </button>
+        <div class="wrapper info">
+            <div class="subtitles">Pick Algorithm</div>
+            <div class="options">
+                <button class="create-maze">Dijkstra</button>
+                <button class="create-maze">A*</button>
+                <button class="create-maze">Sample </button>
+            </div>
+        </div>
+    </div>
+    <div class="wrapper">
+        <table id="board" style="table-layout:fixed;">
 
         </table>
     </div>
