@@ -86,7 +86,7 @@ body {
 
 .cell.start_point::after {
     color: var(--black);
-    font-size: 19px;
+    font-size: 18px;
     content: "α";
 }
 
@@ -98,7 +98,7 @@ body {
 
 .cell.end_point::after {
     color: var(--black);
-    font-size: 19px;
+    font-size: 18px;
     content: "Ω";
 }
 

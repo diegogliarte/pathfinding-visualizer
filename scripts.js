@@ -33,6 +33,9 @@ var Context = function () {
         document.addEventListener("mousemove", function (event) {
             currentState.handleMousemove(event)
         })
+        document.getElementById("run-algorithm").addEventListener("click", function (event) {
+            currentState.handleRunAlgorithm(event)
+        })
 
         currentState.go();
     };
@@ -49,12 +52,9 @@ var Default = function (state) {
 
     }
 
-    function next(e) {
-        state.change(new Dragging(state, e))
-    }
 
     this.handleMousedown = function (event) {
-        next(event)
+        state.change(new Dragging(state, event))
     }
 
     this.handleMouseup = function (event) {
@@ -65,29 +65,30 @@ var Default = function (state) {
 
     }
 
+    this.handleRunAlgorithm = function (event) {
+        state.change(new Pathfinding(state))
+    }
+
 }
 
-var Dragging = function (state, previousEvent) {
+var Dragging = function (state, previousEvent=null, firstTarget=null, previousTarget=null) {
     this.state = state
-    this.firstTarget = null
-    this.previousTarget = null
+    this.firstTarget = firstTarget
+    this.previousTarget = previousTarget
 
     Dragging.prototype.toString = function toString() {
         return "Dragging"
     }
 
     this.go = function () {
-        this.draw(previousEvent.target)
-        this.firstTarget = previousEvent.target.cloneNode()
-        this.previousTarget = previousEvent.target
-    }
-
-    function next() {
-        state.change(new Default(state))
+        if (previousEvent) { // In case we call from Default
+            this.firstTarget = previousEvent.target.cloneNode()
+            this.previousTarget = previousEvent.target
+        }
     }
 
     this.handleMouseup = function () {
-        next()
+        state.change(new Default(state))
     }
 
     this.handleMousedown = function () {
@@ -95,11 +96,53 @@ var Dragging = function (state, previousEvent) {
     }
 
     this.handleMousemove = function (event) {
+        if (isCell(event.target)) {
+            state.change(new Drawing(state, this.firstTarget, this.previousTarget))
+        }
+    }
+
+    this.handleRunAlgorithm = function (event) {
+
+    }
+
+}
+
+var Drawing = function (state, firstTarget, previousTarget) {
+    this.state = state
+    this.firstTarget = firstTarget
+    this.previousTarget = previousTarget
+
+    Drawing.prototype.toString = function toString() {
+        return "Drawing"
+    }
+
+    this.go = function () {
+        this.draw(previousTarget)
+    }
+
+
+    this.handleMouseup = function () {
+        state.change(new Default(state))
+    }
+
+    this.handleMousedown = function () {
+
+    }
+
+    this.handleMousemove = function (event) {
+        if (!isCell(event.target)) {
+            state.change(new Dragging(state, null, this.firstTarget, this.previousTarget))
+        }
+
         if (isDraggable(this.firstTarget)) {
             this.movingDraggable(event.target)
         } else {
             this.draw(event.target)
         }
+    }
+
+    this.handleRunAlgorithm = function (event) {
+
     }
 
 
@@ -121,11 +164,33 @@ var Dragging = function (state, previousEvent) {
 
 }
 
+var Pathfinding = function (state) {
+    this.state = state
 
-const states = {
-    DEFAULT: 0,
-    DRRAGING: 1,
-    PATHFINDING: 2,
+    Pathfinding.prototype.toString = function toString() {
+        return "Pathfinding"
+    }
+
+    this.go = function () {
+        state.change(new Default(state))
+    }
+
+    this.handleMousedown = function (event) {
+
+    }
+
+    this.handleMouseup = function (event) {
+
+    }
+
+    this.handleMousemove = function (event) {
+
+    }
+
+    this.handleRunAlgorithm = function (event) {
+
+    }
+
 }
 
 function initializeStartingPoints() {
@@ -200,6 +265,10 @@ document.addEventListener("keypress", function (e) {
         resetBoard()
     }
 })
+
+function isCell(target) {
+    return target.classList.contains("cell")
+}
 
 function isEmpty(target) {
     return target.classList.contains("empty") && !target.classList.contains("start_point") && !target.classList.contains("end_point")
