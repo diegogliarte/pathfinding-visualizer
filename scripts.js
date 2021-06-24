@@ -7,16 +7,20 @@
 //     || document.body.clientHeight;
 
 
-
 var cells = []
 var toggle = false
+var COLUMNS = 70
+var ROWS = 30
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 var Context = function () {
     var currentState = new Default(this);
 
     this.change = function (state) {
-        console.log(currentState.toString() + " -> " + state.toString())
+        console.log(currentState.toString() , " -> ", state.toString())
         currentState = state;
         currentState.go();
     };
@@ -71,7 +75,7 @@ var Default = function (state) {
 
 }
 
-var Dragging = function (state, previousEvent=null, firstTarget=null, previousTarget=null) {
+var Dragging = function (state, previousEvent = null, firstTarget = null, previousTarget = null) {
     this.state = state
     this.firstTarget = firstTarget
     this.previousTarget = previousTarget
@@ -166,13 +170,15 @@ var Drawing = function (state, firstTarget, previousTarget) {
 
 var Pathfinding = function (state) {
     this.state = state
+    this.cells = cells
 
     Pathfinding.prototype.toString = function toString() {
         return "Pathfinding"
     }
 
     this.go = function () {
-        state.change(new Default(state))
+        document.getElementById("run-algorithm").innerText = "Stop Algorithm"
+        dijkstra().then(path => shortestPath(path)).then(shortest => drawPath(shortest)).then( e => state.change(new Default(state)))
     }
 
     this.handleMousedown = function (event) {
@@ -188,17 +194,122 @@ var Pathfinding = function (state) {
     }
 
     this.handleRunAlgorithm = function (event) {
+        console.log("stop")
+    }
 
+    async function dijkstra() {
+        this.distances = new Array(cells.length * cells[0].length).fill(Infinity)
+        this.visiteds = new Array(cells.length * cells[0].length).fill(false)
+        var path = new Array(cells.length * cells[0].length).fill(false)
+        this.s = getSource()
+        this.distances[s] = 0
+        while (!visiteds.every(Boolean)) {
+            minDistance = Math.min(...this.distances.filter(function (elem, i) { // Only gets min from unvisited
+                return !this.visiteds[i]
+            }))
+            for (i = 0; i < distances.length; i++) { // Find the min
+                if (distances[i] == minDistance && !this.visiteds[i]) {
+                    var u = i
+                    break
+                }
+            }
+
+
+            this.visiteds[u] = true
+            neighbors = getNeighbors(u)
+            for (i = 0; i < neighbors.length; i++) {
+                neighbor = neighbors[i]
+                pos = singleToDoubleIndex(neighbor)
+                if (isEnd(cells[pos.y][pos.x])) {
+                    path[neighbor] = u
+                    return path
+                }
+
+                if (distances[neighbor] > distances[u] + 1) {
+                    distances[neighbor] = distances[u] + 1
+                    path[neighbor] = u
+                    cells[pos.y][pos.x].classList.add("visited")
+                    await sleep(1);
+                }
+            }
+        }
+        return path
+    }
+
+    function shortestPath(path) {
+        var S = []
+        var u = getTarget()
+        if (path[u] || u == this.source) {
+            while (path[u] !== false) {
+                S.unshift(u)
+                u = path[u]
+            }
+        }
+        return S
+    }
+
+    function drawPath(path) {
+        for (i = 0; i < path.length - 1; i++) {
+            pos = singleToDoubleIndex(path[i])
+            cells[pos.y][pos.x].classList.add("path")
+        }
+    }
+
+    function findFirstFromClass(func) {
+        for (i = 0; i < ROWS; i++) {
+            for (j = 0; j < COLUMNS; j++) {
+                if (func(cells[i][j])) {
+                    return doubleToSingleDigit(i, j)
+                }
+            }
+
+        }
+    }
+
+    function getSource() {
+        return findFirstFromClass(isStart);
+    }
+
+    function getTarget(fuc) {
+        return findFirstFromClass(isEnd);
+    }
+
+
+    function doubleToSingleDigit(i, j) {
+        return i * COLUMNS + j
+    }
+
+    function singleToDoubleIndex(i) {
+        return {x: i % COLUMNS, y: Math.trunc(i / COLUMNS)}
+    }
+
+    function getNeighbors(node) {
+        var north = node - COLUMNS
+        var south = node + COLUMNS
+        pos = singleToDoubleIndex(node)
+        var east = pos.x != cells[0].length - 1 ? node + 1 : node
+        var west = pos.x != 0 ? node - 1 : node
+        return getValidNeighbors([north, south, east, west])
+    }
+
+    function getValidNeighbors(neighbors) {
+        valids = []
+        for (i = 0; i < neighbors.length; i++) {
+            pos = singleToDoubleIndex(neighbors[i])
+            if (isInside(pos.x, pos.y) && !this.visiteds[neighbors[i]] && !isVisited(cells[pos.y][pos.x]) && !isWall(cells[pos.y][pos.x])) {
+                valids.push(neighbors[i])
+            }
+        }
+        return valids
     }
 
 }
 
 function initializeStartingPoints() {
-    start = cells[cells.length / 2][Math.round(cells[0].length * 1/3)]
+    start = cells[cells.length / 2][Math.round(cells[0].length * 1 / 3)]
     start.className = "cell start_point draggable"
 
-
-    end = cells[cells.length / 2][Math.round(cells[0].length * 2/3)]
+    end = cells[cells.length / 2][Math.round(cells[0].length * 2 / 3)]
     end.className = "cell end_point draggable"
 
 }
@@ -206,10 +317,10 @@ function initializeStartingPoints() {
 function initializeBoard() {
 
     var board = document.getElementById("board")
-    for (i = 0; i < 30; i++) {
+    for (i = 0; i < ROWS; i++) {
         row = board.insertRow()
         rows = []
-        for (j = 0; j < 70; j++) {
+        for (j = 0; j < COLUMNS; j++) {
             cell = row.insertCell()
             cell.classList.add("cell")
             cell.classList.add("empty")
@@ -228,33 +339,6 @@ function clearSelection() {
         document.selection.empty();
     }
 }
-
-
-// document.addEventListener("mousedown", function (e) {
-//     clearSelection()
-//     draw(e.target)
-//     if (isDraggable(e.target)) {
-//         draggableClass = e.target.className
-//     }
-//    previousTarget = e.target
-//
-// })
-// document.addEventListener("mouseup", function (e) {
-//
-//     draggableClass = null
-//     previousTarget = null
-// })
-
-// document.addEventListener("mousemove", function (e) {
-
-
-//     if (draggableClass) {
-//      movingDraggable();
-//
-//     } else {
-//         draw(e.target);
-//     }
-// })
 
 
 document.addEventListener("keypress", function (e) {
@@ -282,9 +366,25 @@ function isDraggable(target) {
     return target.classList.contains("draggable")
 }
 
+function isStart(target) {
+    return target.classList.contains("start_point")
+}
+
+function isEnd(target) {
+    return target.classList.contains("end_point")
+}
+
+function isVisited(target) {
+    return target.classList.contains("visited")
+}
+
+function isInside(x, y) {
+    return 0 <= x && x < COLUMNS && 0 <= y && y < ROWS
+}
+
 function resetBoard() {
-    for (i = 0; i < cells.length; i++) {
-        for (j = 0; j < cells[0].length; j++) {
+    for (i = 0; i < ROWS; i++) {
+        for (j = 0; j < COLUMNS; j++) {
             cell = cells[i][j]
             if (!isDraggable(cell)) {
                 cell.className = "cell empty"

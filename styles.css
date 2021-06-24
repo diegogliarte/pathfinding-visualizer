@@ -75,8 +75,15 @@ body {
 
 .cell.wall {
     background-color: black;
-    animation-name: cell-born;
-    animation-duration: 1.5s;
+}
+
+.cell.visited {
+    background-color: #2055da;
+    opacity: 0.5;
+}
+
+.cell.path {
+    background-color: yellow;
 }
 
 .cell.start_point {
@@ -107,8 +114,9 @@ table {
     width: calc(70 * 24px);
     border-collapse: collapse;
     border-spacing: 0;
-    margin-top: 50px;
+    margin-top: 40px;
     border: 2px solid black;
+    background-color: var(--white);
 }
 
 td {
