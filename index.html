@@ -8,32 +8,32 @@
     <script src="scripts.js"></script>
 </head>
 <body>
-    <div class="wrapper">
-        <div class="wrapper info">
-            <div class="subtitles">Create maze</div>
-            <div class="options">
-                <button class="create-maze">Recursive Division</button>
-                <button class="create-maze">DFS</button>
-                <button class="create-maze">Kruskal</button>
-            </div>
-
+<div class="wrapper">
+    <div class="wrapper info">
+        <div class="subtitles">Create maze</div>
+        <div class="wrapper-options">
+            <button class="options create-maze" id="create-random">Random</button>
+            <button class="options create-maze" id="create-recursion">Recursive Division</button>
+            <button class="options create-maze" id="create-kruskal">Kruskal</button>
         </div>
-        <button id="run-algorithm">
-            Run Algorithm
-        </button>
-        <div class="wrapper info">
-            <div class="subtitles">Pick Algorithm</div>
-            <div class="options">
-                <button class="create-maze">Dijkstra</button>
-                <button class="create-maze">A*</button>
-                <button class="create-maze">Sample </button>
-            </div>
+
+    </div>
+    <button id="run-algorithm">
+        Run Algorithm
+    </button>
+    <div class="wrapper info">
+        <div class="subtitles">Pick Algorithm</div>
+        <div class="wrapper-options">
+            <button class="options pick-algorithm">Dijkstra</button>
+            <button class="options pick-algorithm">A*</button>
+            <button class="options pick-algorithm">Sample</button>
         </div>
     </div>
-    <div class="wrapper">
-        <table id="board" style="table-layout:fixed;">
+</div>
+<div class="wrapper">
+    <table id="board" style="table-layout:fixed;">
 
-        </table>
-    </div>
+    </table>
+</div>
 </body>
 </html>
