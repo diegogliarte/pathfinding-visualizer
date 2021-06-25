@@ -7,10 +7,10 @@
 //     || document.body.clientHeight;
 
 
-var cells = []
-var toggle = false
-var COLUMNS = 50
-var ROWS = 20
+const COLUMNS = 50
+const ROWS = 20
+const cells = []
+let toggle = false;
 var contextState
 
 function sleep(ms) {
@@ -42,7 +42,7 @@ var Context = function () {
             currentState.handleRunAlgorithm(event)
         })
         mazes = document.getElementsByClassName("create-maze")
-        for (i = 0; i < mazes.length; i++) {
+        for (let i = 0; i < mazes.length; i++) {
             mazes[i].addEventListener("click", function (event) {
                 currentState.handleCreateMaze(event)
             })
@@ -99,15 +99,19 @@ var Dragging = function (state, previousEvent = null, firstTarget = null, previo
         if (previousEvent) { // In case we call from Default
             this.firstTarget = previousEvent.target.cloneNode()
             this.previousTarget = previousEvent.target
+
+            if (isCell(previousEvent.target)) { // Single click
+                state.change(new Drawing(state, this.firstTarget, this.previousTarget))
+            }
         }
+
     }
 
     this.handleMouseup = function () {
         state.change(new Default(state))
     }
 
-    this.handleMousedown = function () {
-
+    this.handleMousedown = function (event) {
     }
 
     this.handleMousemove = function (event) {
@@ -162,7 +166,6 @@ var Drawing = function (state, firstTarget, previousTarget) {
 
 
     async function drawWalls(target) {
-        // await sleep(0)
         if (target !== this.previousTarget && (isEmpty(target) || (toggle && isWall(target)))) {
             this.previousTarget = target
             target.classList.toggle("wall")
@@ -182,7 +185,7 @@ var Drawing = function (state, firstTarget, previousTarget) {
 
 var Pathfinding = function (state) {
     this.state = state
-    this.cells = cells
+    let stopped
 
     Pathfinding.prototype.toString = function toString() {
         return "Pathfinding"
@@ -192,7 +195,12 @@ var Pathfinding = function (state) {
         document.getElementById("run-algorithm").innerText = "Stop Algorithm"
         dijkstra().then(path => shortestPath(path)).then(shortest => drawPath(shortest)).then(function (e) {
             document.getElementById("run-algorithm").innerText = "Run Algorithm"
-            state.change(new Recalculating(state))
+            if (!stopped) {
+                state.change(new Recalculating(state))
+            } else {
+                resetVisited()
+                state.change(new Default(state))
+            }
         })
     }
 
@@ -209,32 +217,36 @@ var Pathfinding = function (state) {
     }
 
     this.handleRunAlgorithm = function (event) {
-        console.log("stop")
+        stopped = true
+
     }
 
     async function dijkstra() {
-        this.distances = new Array(cells.length * cells[0].length).fill(Infinity)
-        this.visiteds = new Array(cells.length * cells[0].length).fill(false)
-        var path = new Array(cells.length * cells[0].length).fill(false)
-        this.s = getSource()
-        this.distances[s] = 0
+        let distances = new Array(cells.length * cells[0].length).fill(Infinity)
+        let visiteds = new Array(cells.length * cells[0].length).fill(false)
+        let path = new Array(cells.length * cells[0].length).fill(false)
+        const source = getSource()
+        distances[source] = 0
         while (!visiteds.every(Boolean)) {
-            minDistance = Math.min(...this.distances.filter(function (elem, i) { // Only gets min from unvisited
-                return !this.visiteds[i]
+            if (stopped) {
+                return []
+            }
+            let minDistance = Math.min(...distances.filter(function (elem, i) { // Only gets min from unvisited
+                return !visiteds[i]
             }))
-            for (i = 0; i < distances.length; i++) { // Find the min
-                if (distances[i] == minDistance && !this.visiteds[i]) {
+            for (let i = 0; i < distances.length; i++) { // Find the min
+                if (distances[i] === minDistance && !visiteds[i]) {
                     var u = i
                     break
                 }
             }
 
 
-            this.visiteds[u] = true
-            neighbors = getNeighbors(u)
-            for (i = 0; i < neighbors.length; i++) {
-                neighbor = neighbors[i]
-                pos = singleToDoubleIndex(neighbor)
+            visiteds[u] = true
+            let neighbors = getNeighbors(u, visiteds)
+            for (let i = 0; i < neighbors.length; i++) {
+                let neighbor = neighbors[i]
+                let pos = singleToDoubleIndex(neighbor)
                 if (isEnd(cells[pos.y][pos.x])) {
                     path[neighbor] = u
                     return path
@@ -252,9 +264,10 @@ var Pathfinding = function (state) {
     }
 
     function shortestPath(path) {
-        var S = []
-        var u = getTarget()
-        if (path[u] || u == this.source) {
+        let S = []
+        let u = getTarget()
+        let source = getSource()
+        if (path[u] || u === source) {
             while (path[u] !== false) {
                 S.unshift(u)
                 u = path[u]
@@ -264,15 +277,15 @@ var Pathfinding = function (state) {
     }
 
     function drawPath(path) {
-        for (i = 0; i < path.length - 1; i++) {
-            pos = singleToDoubleIndex(path[i])
+        for (let i = 0; i < path.length - 1; i++) {
+            let pos = singleToDoubleIndex(path[i])
             cells[pos.y][pos.x].classList.add("path")
         }
     }
 
     function findFirstFromClass(func) {
-        for (i = 0; i < ROWS; i++) {
-            for (j = 0; j < COLUMNS; j++) {
+        for (let i = 0; i < ROWS; i++) {
+            for (let j = 0; j < COLUMNS; j++) {
                 if (func(cells[i][j])) {
                     return doubleToSingleDigit(i, j)
                 }
@@ -285,7 +298,7 @@ var Pathfinding = function (state) {
         return findFirstFromClass(isStart);
     }
 
-    function getTarget(fuc) {
+    function getTarget() {
         return findFirstFromClass(isEnd);
     }
 
@@ -298,20 +311,20 @@ var Pathfinding = function (state) {
         return {x: i % COLUMNS, y: Math.trunc(i / COLUMNS)}
     }
 
-    function getNeighbors(node) {
-        var north = node - COLUMNS
-        var south = node + COLUMNS
-        pos = singleToDoubleIndex(node)
-        var east = pos.x != cells[0].length - 1 ? node + 1 : node
-        var west = pos.x != 0 ? node - 1 : node
-        return getValidNeighbors([north, south, east, west])
+    function getNeighbors(node, visiteds) {
+        let north = node - COLUMNS
+        let south = node + COLUMNS
+        let pos = singleToDoubleIndex(node)
+        let east = pos.x !== cells[0].length - 1 ? node + 1 : node
+        let west = pos.x !== 0 ? node - 1 : node
+        return getValidNeighbors([north, south, east, west], visiteds)
     }
 
-    function getValidNeighbors(neighbors) {
-        valids = []
-        for (i = 0; i < neighbors.length; i++) {
-            pos = singleToDoubleIndex(neighbors[i])
-            if (isInside(pos.x, pos.y) && !this.visiteds[neighbors[i]] && !isVisited(cells[pos.y][pos.x]) && !isWall(cells[pos.y][pos.x])) {
+    function getValidNeighbors(neighbors, visiteds) {
+        let valids = []
+        for (let i = 0; i < neighbors.length; i++) {
+            let pos = singleToDoubleIndex(neighbors[i])
+            if (isInside(pos.x, pos.y) && !visiteds[neighbors[i]] && !isVisited(cells[pos.y][pos.x]) && !isWall(cells[pos.y][pos.x])) {
                 valids.push(neighbors[i])
             }
         }
@@ -345,17 +358,6 @@ var Recalculating = function (state) {
             state.change(new Dragging(state, event, event.target, event.target))
         } else {
             state.change(new Default(state))
-        }
-    }
-
-    function resetVisited() {
-        for (i = 0; i < ROWS; i++) {
-            for (j = 0; j < COLUMNS; j++) {
-                cell = cells[i][j]
-                if (isVisited(cell)) {
-                    cell.className = "cell empty"
-                }
-            }
         }
     }
 
@@ -398,19 +400,19 @@ var CreatingMaze = function (state, maze) {
     }
 
     async function createMaze() {
-        if (maze == "create-random") {
+        if (maze === "create-random") {
             await createRandom()
-        } else if (maze == "create-recursive") {
+        } else if (maze === "create-recursive") {
             await createRecursive(1, COLUMNS - 1, 1, ROWS - 1, true)
         }
     }
 
     async function createRandom() {
-        for (i = 0; i < ROWS; i++) {
-            for (j = 0; j < COLUMNS; j++) {
-                if (randomRange(0, 4) == 0) {
+        for (let i = 0; i < ROWS; i++) {
+            for (let j = 0; j < COLUMNS; j++) {
+                if (randomRange(0, 4) === 0) {
                     await sleep(2.5)
-                    target = cells[i][j]
+                    let target = cells[i][j]
                     target.classList.toggle("wall")
                     target.classList.toggle("empty")
                 }
@@ -420,9 +422,9 @@ var CreatingMaze = function (state, maze) {
 
     async function createRecursive(minWidth, maxWidth, minHeight, maxHeight, isHorizontal) {
         if (isHorizontal && maxHeight - minHeight > 3) {
-            var wallIdx = randomRange(minHeight, maxHeight)
-            holeIdx = randomRange(minWidth, maxWidth)
-            for (i = minWidth - 1; i <= maxWidth; i++) {
+            let wallIdx = randomRange(minHeight, maxHeight)
+            let holeIdx = randomRange(minWidth, maxWidth)
+            for (let i = minWidth - 1; i <= maxWidth; i++) {
                 if (i != holeIdx && isEmpty(cells[wallIdx][i])) {
                     await sleep(10)
                     target = cells[wallIdx][i]
@@ -434,9 +436,9 @@ var CreatingMaze = function (state, maze) {
             await createMaze(minWidth, maxWidth, wallIdx + 2, maxHeight, !isHorizontal)
 
         } else if (maxWidth - minWidth > 3) {
-            wallIdx = randomRange(minWidth, maxWidth)
-            holeIdx = randomRange(minHeight, maxHeight)
-            for (i = minHeight - 1; i <= maxHeight; i++) {
+            let wallIdx = randomRange(minWidth, maxWidth)
+            let holeIdx = randomRange(minHeight, maxHeight)
+            for (let i = minHeight - 1; i <= maxHeight; i++) {
                 if (i != holeIdx && isEmpty(cells[i][wallIdx])) {
                     await sleep(10)
                     target = cells[i][wallIdx]
@@ -451,7 +453,7 @@ var CreatingMaze = function (state, maze) {
         // if (true) {
         //     var wallIdx = Math.round(Math.random() * height);
         //     var holeIdx = Math.round(Math.random() * width);
-        //     for (i = 0; i < COLUMNS; i++) {
+        //     for (let i = 0; i < COLUMNS; i++) {
         //         if (i != holeIdx && isEmpty(cells[wallIdx][i])) {
         //
         //         }
@@ -463,7 +465,7 @@ var CreatingMaze = function (state, maze) {
         // } else { // Vertical cut
         //     var wallIdx = Math.round(Math.random() * COLUMNS);
         //     var holeIdx = Math.round(Math.random() * ROWS);
-        //     for (i = 0; i < ROWS; i++) {
+        //     for (let i = 0; i < ROWS; i++) {
         //         if (i != holeIdx && isEmpty(cells[i][wallIdx])) {
         //             await sleep(25)
         //             target = cells[i][wallIdx]
@@ -483,22 +485,21 @@ var CreatingMaze = function (state, maze) {
 
 
 function initializeStartingPoints() {
-    start = cells[cells.length / 2][Math.round(cells[0].length * 1 / 3)]
+    let start = cells[cells.length / 2][Math.round(cells[0].length * 1 / 3)]
     start.className = "cell start_point draggable"
 
-    end = cells[cells.length / 2][Math.round(cells[0].length * 2 / 3)]
+    let end = cells[cells.length / 2][Math.round(cells[0].length * 2 / 3)]
     end.className = "cell end_point draggable"
 
 }
 
 function initializeBoard() {
-
-    var board = document.getElementById("board")
-    for (i = 0; i < ROWS; i++) {
-        row = board.insertRow()
-        rows = []
-        for (j = 0; j < COLUMNS; j++) {
-            cell = row.insertCell()
+    let board = document.getElementById("board")
+    for (let i = 0; i < ROWS; i++) {
+        let row = board.insertRow()
+        let rows = []
+        for (let j = 0; j < COLUMNS; j++) {
+            let cell = row.insertCell()
             cell.classList.add("cell")
             cell.classList.add("empty")
             rows.push(cell)
@@ -561,16 +562,24 @@ function isInside(x, y) {
     return 0 <= x && x < COLUMNS && 0 <= y && y < ROWS
 }
 
-function resetBoard() {
-    for (i = 0; i < ROWS; i++) {
-        for (j = 0; j < COLUMNS; j++) {
-            cell = cells[i][j]
-            if (!isDraggable(cell)) {
+function reset(func, bool) {
+    for (let i = 0; i < ROWS; i++) {
+        for (let j = 0; j < COLUMNS; j++) {
+            let cell = cells[i][j]
+            if (func(cell) === bool) {
                 cell.className = "cell empty"
             }
         }
     }
+}
 
+function resetBoard() {
+    reset(isDraggable, false)
+
+}
+
+function resetVisited() {
+    reset(isVisited, true)
 }
 
 window.onload = function () {
