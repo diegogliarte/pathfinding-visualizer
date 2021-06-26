@@ -7,7 +7,7 @@
 //     || document.body.clientHeight;
 
 
-const COLUMNS = 50
+const COLUMNS = 20
 const ROWS = 20
 const cells = []
 let toggle = false;
@@ -41,7 +41,7 @@ var Context = function () {
         document.getElementById("run-algorithm").addEventListener("click", function (event) {
             currentState.handleRunAlgorithm(event)
         })
-        mazes = document.getElementsByClassName("create-maze")
+        let mazes = document.getElementsByClassName("create-maze")
         for (let i = 0; i < mazes.length; i++) {
             mazes[i].addEventListener("click", function (event) {
                 currentState.handleCreateMaze(event)
@@ -86,25 +86,27 @@ var Default = function (state) {
 
 }
 
-var Dragging = function (state, previousEvent = null, firstTarget = null, previousTarget = null) {
+var Dragging = function (state, previousEvent = null, firstTarget = null, previousTarget = null, previousClassName) {
     this.state = state
     this.firstTarget = firstTarget
     this.previousTarget = previousTarget
+    this.previousClassName = previousClassName
+
 
     Dragging.prototype.toString = function toString() {
         return "Dragging"
     }
 
     this.go = function () {
+        this.previousClassName = this.previousClassName ? this.previousClassName : "cell empty"
         if (previousEvent) { // In case we call from Default
             this.firstTarget = previousEvent.target.cloneNode()
             this.previousTarget = previousEvent.target
 
             if (isCell(previousEvent.target)) { // Single click
-                state.change(new Drawing(state, this.firstTarget, this.previousTarget))
+                state.change(new Drawing(state, this.firstTarget, this.previousTarget, this.previousClassName))
             }
         }
-
     }
 
     this.handleMouseup = function () {
@@ -116,7 +118,7 @@ var Dragging = function (state, previousEvent = null, firstTarget = null, previo
 
     this.handleMousemove = function (event) {
         if (isCell(event.target)) {
-            state.change(new Drawing(state, this.firstTarget, this.previousTarget))
+            state.change(new Drawing(state, this.firstTarget, this.previousTarget, this.previousClassName))
         }
     }
 
@@ -126,10 +128,11 @@ var Dragging = function (state, previousEvent = null, firstTarget = null, previo
 
 }
 
-var Drawing = function (state, firstTarget, previousTarget) {
+var Drawing = function (state, firstTarget, previousTarget, previousClassName) {
     this.state = state
     this.firstTarget = firstTarget
     this.previousTarget = previousTarget
+    this.previousClassName = previousClassName
 
     Drawing.prototype.toString = function toString() {
         return "Drawing"
@@ -150,11 +153,15 @@ var Drawing = function (state, firstTarget, previousTarget) {
 
     this.handleMousemove = function (event) {
         if (!isCell(event.target)) {
-            state.change(new Dragging(state, null, this.firstTarget, this.previousTarget))
+            state.change(new Dragging(state, null, this.firstTarget, this.previousTarget, this.previousClassName))
         }
 
         if (isDraggable(this.firstTarget)) {
-            this.movingDraggable(event.target)
+            this.movingDraggable(event.target).then(function (target) {
+                if (target) {
+                    target.className = firstTarget.className
+                }
+            })
         } else {
             drawWalls(event.target)
         }
@@ -174,11 +181,12 @@ var Drawing = function (state, firstTarget, previousTarget) {
 
     }
 
-    this.movingDraggable = function movingDraggable(target) {
+    this.movingDraggable = async function (target) {
         if (this.previousTarget !== target && (isWall(target) || isEmpty(target))) {
-            target.className = this.firstTarget.className
-            this.previousTarget.className = "cell empty"
+            this.previousTarget.className = this.previousClassName
+            this.previousClassName = target.className
             this.previousTarget = target
+            return target
         }
     }
 }
@@ -370,6 +378,7 @@ var Recalculating = function (state) {
     }
 }
 
+
 var CreatingMaze = function (state, maze) {
     this.state = state
 
@@ -402,8 +411,8 @@ var CreatingMaze = function (state, maze) {
     async function createMaze() {
         if (maze === "create-random") {
             await createRandom()
-        } else if (maze === "create-recursive") {
-            await createRecursive(1, COLUMNS - 1, 1, ROWS - 1, true)
+        } else if (maze === "create-recursion") {
+            await createRecursive(true, 0, COLUMNS - 1, 0, ROWS - 1)
         }
     }
 
@@ -420,65 +429,188 @@ var CreatingMaze = function (state, maze) {
         }
     }
 
-    async function createRecursive(minWidth, maxWidth, minHeight, maxHeight, isHorizontal) {
-        if (isHorizontal && maxHeight - minHeight > 3) {
-            let wallIdx = randomRange(minHeight, maxHeight)
-            let holeIdx = randomRange(minWidth, maxWidth)
-            for (let i = minWidth - 1; i <= maxWidth; i++) {
-                if (i != holeIdx && isEmpty(cells[wallIdx][i])) {
-                    await sleep(10)
-                    target = cells[wallIdx][i]
-                    target.classList.toggle("wall")
-                    target.classList.toggle("empty")
-                }
-            }
-            await createMaze(minWidth, maxWidth, minHeight, wallIdx - 1, !isHorizontal)
-            await createMaze(minWidth, maxWidth, wallIdx + 2, maxHeight, !isHorizontal)
 
-        } else if (maxWidth - minWidth > 3) {
-            let wallIdx = randomRange(minWidth, maxWidth)
-            let holeIdx = randomRange(minHeight, maxHeight)
-            for (let i = minHeight - 1; i <= maxHeight; i++) {
-                if (i != holeIdx && isEmpty(cells[i][wallIdx])) {
-                    await sleep(10)
-                    target = cells[i][wallIdx]
-                    target.classList.toggle("wall")
-                    target.classList.toggle("empty")
-                }
-            }
-            await createMaze(minWidth, wallIdx - 1, minHeight, maxHeight, !isHorizontal)
-            await createMaze(wallIdx + 2, maxWidth, minHeight, maxHeight, !isHorizontal)
+    async function createRecursive(h, minX, maxX, minY, maxY) { // TODO Not working properly
+        console.log("Iteration", h, minX, maxX, minY, maxY)
+        if (h && maxX - minX >= 1) {
+            let y = Math.floor(randomRange(minY, maxY) / 2) * 2
+            await addHWall(minX, maxX, y)
+            await createRecursive(!h, minX, maxX, minY, y - 1)
+            await createRecursive(!h, minX, maxX, y + 1, maxY)
+        } else if (!h && maxY - minY >= 1) {
+            let x = Math.floor(randomRange(minX, maxX) / 2) * 2
+
+            await addVWall(minY, maxY, x)
+            await createRecursive(!h, minX, x - 1, minY, maxY)
+            await createRecursive(!h, x + 1, maxX, minY, maxY)
         }
-        // if (Math.random() * 2 < 1) { // Horizontal cut
-        // if (true) {
-        //     var wallIdx = Math.round(Math.random() * height);
-        //     var holeIdx = Math.round(Math.random() * width);
-        //     for (let i = 0; i < COLUMNS; i++) {
-        //         if (i != holeIdx && isEmpty(cells[wallIdx][i])) {
-        //
-        //         }
-        //     }
-        //     console.log(width, wallIdx - 1, offset)
-        //     await createMaze(width, wallIdx, offset)
-        //     await createMaze(width, wallIdx, {x: offset.x, y: offset.y + wallIdx + 1})
-        // }
-        // } else { // Vertical cut
-        //     var wallIdx = Math.round(Math.random() * COLUMNS);
-        //     var holeIdx = Math.round(Math.random() * ROWS);
-        //     for (let i = 0; i < ROWS; i++) {
-        //         if (i != holeIdx && isEmpty(cells[i][wallIdx])) {
-        //             await sleep(25)
-        //             target = cells[i][wallIdx]
-        //             target.classList.toggle("wall")
-        //             target.classList.toggle("empty")
-        //         }
-        //     }
-        // }
 
     }
 
+    async function addHWall(minX, maxX, y) {
+        let hole = getHole(minX, maxX)
+        for (let i = minX; i <= maxX; i++) {
+            if (i !== hole) {
+                await sleep(5)
+                let target = cells[y][i]
+                if (!isDraggable(target)) {
+                    target.className = "cell wall"
+                }
+
+            }
+        }
+    }
+
+    async function addVWall(minY, maxY, x) {
+        let hole = getHole(minY, maxY);
+        for (let i = minY; i <= maxY; i++) {
+            if (i !== hole) {
+                await sleep(5)
+                let target = cells[i][x]
+                if (!isDraggable(target)) {
+                    target.className = "cell wall"
+                }
+            }
+        }
+    }
+
+    function getHole(min, max) {
+        return Math.floor(randomRange(min, max) / 2) * 2 + 1
+    }
+
+
+    //     console.log(x, y, width, height, isHorizontal)
+    //     await sleep(2500)
+    //     console.log(width, height)
+    //     if (width < 2 || height < 2) {
+    //         console.log("returned")
+    //         return
+    //     }
+    //
+    //     let wx = x + (isHorizontal ? 0 : randomRange(0, width - 2))
+    //     let wy = y + (isHorizontal ? randomRange(0, height - 2) : 0)
+    //
+    //     let px = wx + (isHorizontal ? randomRange(0, width) : 0)
+    //     let py = wy + (isHorizontal ? 0 : randomRange(0, height))
+    //
+    //     let dx = isHorizontal ? 1 : 0
+    //     let dy = isHorizontal ? 0 : 1
+    //
+    //     let length = isHorizontal ? width : height
+    //
+    //     let dir = isHorizontal ? 1 : 2
+    //
+    //     for (let i = 0; i < length; i++) {
+    //         if (wx !== px || wy !== py) {
+    //             await sleep(20)
+    //             let target = cells[wy][wx]
+    //             target.classList.toggle("wall")
+    //             target.classList.toggle("empty")
+    //         }
+    //         wx += dx
+    //         wy += dy
+    //     }
+    //
+    //     let nx = x
+    //     let ny = y
+    //     let w
+    //     let h
+    //
+    //     if (isHorizontal) {
+    //         w = width
+    //         h = wy - y
+    //     } else {
+    //         w = wx - x
+    //         h = height
+    //     }
+    //     await createRecursive(nx, ny, w, h, choose_orientation(w, h))
+    //
+    //     if (isHorizontal) {
+    //         nx = x
+    //         ny = wy + 1
+    //         w = width
+    //         h = y + height - wy - 1
+    //     } else {
+    //         nx = wx + 1
+    //         ny = y
+    //         w = x + width - wx - 1
+    //         h = height
+    //     }
+    //
+    //     await createRecursive(nx, ny, w, h, choose_orientation(w, h))
+    //
+    //
+    // }
+    //
+    function choose_orientation(w, h) {
+        if (w < h) {
+            return true
+        }
+        if (h < w) {
+            return false
+        } else {
+            return randomRange(0, 2) === 0
+        }
+    }
+
+    // if (isHorizontal && maxHeight - minHeight > 3) {
+    //     let wallIdx = randomRange(minHeight, maxHeight)
+    //     let holeIdx = randomRange(minWidth, maxWidth)
+    //     for (let i = minWidth - 1; i <= maxWidth; i++) {
+    //         if (i != holeIdx && isEmpty(cells[wallIdx][i])) {
+    //             await sleep(10)
+    //             target = cells[wallIdx][i]
+    //             target.classList.toggle("wall")
+    //             target.classList.toggle("empty")
+    //         }
+    //     }
+    //     await createMaze(minWidth, maxWidth, minHeight, wallIdx - 1, !isHorizontal)
+    //     await createMaze(minWidth, maxWidth, wallIdx + 2, maxHeight, !isHorizontal)
+    //
+    // } else if (maxWidth - minWidth > 3) {
+    //     let wallIdx = randomRange(minWidth, maxWidth)
+    //     let holeIdx = randomRange(minHeight, maxHeight)
+    //     for (let i = minHeight - 1; i <= maxHeight; i++) {
+    //         if (i != holeIdx && isEmpty(cells[i][wallIdx])) {
+    //             await sleep(10)
+    //             target = cells[i][wallIdx]
+    //             target.classList.toggle("wall")
+    //             target.classList.toggle("empty")
+    //         }
+    //     }
+    //     await createMaze(minWidth, wallIdx - 1, minHeight, maxHeight, !isHorizontal)
+    //     await createMaze(wallIdx + 2, maxWidth, minHeight, maxHeight, !isHorizontal)
+    // }
+    // if (Math.random() * 2 < 1) { // Horizontal cut
+    // if (true) {
+    //     var wallIdx = Math.round(Math.random() * height);
+    //     var holeIdx = Math.round(Math.random() * width);
+    //     for (let i = 0; i < COLUMNS; i++) {
+    //         if (i != holeIdx && isEmpty(cells[wallIdx][i])) {
+    //
+    //         }
+    //     }
+    //     console.log(width, wallIdx - 1, offset)
+    //     await createMaze(width, wallIdx, offset)
+    //     await createMaze(width, wallIdx, {x: offset.x, y: offset.y + wallIdx + 1})
+    // }
+    // } else { // Vertical cut
+    //     var wallIdx = Math.round(Math.random() * COLUMNS);
+    //     var holeIdx = Math.round(Math.random() * ROWS);
+    //     for (let i = 0; i < ROWS; i++) {
+    //         if (i != holeIdx && isEmpty(cells[i][wallIdx])) {
+    //             await sleep(25)
+    //             target = cells[i][wallIdx]
+    //             target.classList.toggle("wall")
+    //             target.classList.toggle("empty")
+    //         }
+    //     }
+    // }
+
+    // }
+
     function randomRange(min, max) {
-        return Math.trunc(Math.random() * (max - min) + min)
+        return Math.random() * (max - min + 1) + min
     }
 
 }

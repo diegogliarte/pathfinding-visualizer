@@ -54,6 +54,7 @@ body {
 
 }
 
+
 #run-algorithm:hover {
     background-color: var(--black);
     color: var(--white);
@@ -71,15 +72,34 @@ body {
 .cell.empty {
     background-color: var(--white);
     border: 1px solid gray;
+
 }
 
 .cell.wall {
+    transform: scale(0);
     background-color: black;
+    animation: pop 0.5s ease-in forwards;
+}
+
+@keyframes pop {
+    10% {
+        transform: scale(0.0)
+    }
+    30% {
+        transform: scale(0.25)
+    }
+    75% {
+        transform: scale(1.25)
+    }
+    100% {
+        transform: scale(1)
+    }
 }
 
 .cell.visited {
     background-color: #2055da;
     opacity: 0.5;
+    animation: pop 0.5s ease-out;
 }
 
 .cell.path {
@@ -93,7 +113,7 @@ body {
 
 .cell.start_point::after {
     color: var(--black);
-    font-size: 18px;
+    font-size: 28px;
     content: "α";
 }
 
@@ -105,13 +125,13 @@ body {
 
 .cell.end_point::after {
     color: var(--black);
-    font-size: 18px;
+    font-size: 28px;
     content: "Ω";
 }
 
 
 table {
-    width: calc(50 * 35px);
+    width: calc(20 * 35px);
     border-collapse: collapse;
     border-spacing: 0;
     margin-top: 40px;
