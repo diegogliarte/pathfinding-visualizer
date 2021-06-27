@@ -1,13 +1,4 @@
-// var width = window.innerWidth
-//     || document.documentElement.clientWidth
-//     || document.body.clientWidth;
-//
-// var height = window.innerHeight
-//     || document.documentElement.clientHeight
-//     || document.body.clientHeight;
-
-
-const COLUMNS = 20
+const COLUMNS = 50
 const ROWS = 20
 const cells = []
 let toggle = false;
@@ -17,226 +8,260 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-var Context = function () {
-    var currentState = new Default(this);
+class Context {
+    constructor(cells) {
+        this.cells = cells
+        this.states = [new Default(this), new Dragging(this), new Drawing(this), new Pathfinding(this), new Recalculating(this), new CreatingMaze(this)]
+        this.current = this.states[0]
+    }
 
-    this.change = function (state) {
-        console.log(currentState.toString(), " -> ", state.toString())
-        currentState = state;
-        currentState.go();
+
+    change(state, event, firstTarget = null, previousTarget = null) {
+        let newState = this.getState(state)
+        console.log(this.current.toString(), " -> ", newState.toString())
+        this.current = newState
+        this.current.start(event, firstTarget, previousTarget);
     };
 
-    this.start = function () {
+    getState(state) {
+        for (let i = 0; i < this.states.length; i++) {
+            if (this.states[i] instanceof state) {
+                return this.states[i]
+            }
+        }
+        return this.states[0]
+    }
+
+    start() {
+        let _this = this
         document.addEventListener("mouseup", function (event) {
             clearSelection()
-            currentState.handleMouseup(event)
+            _this.current.handleMouseup(event)
         })
         document.addEventListener("mousedown", function (event) {
             clearSelection()
-            currentState.handleMousedown(event)
+            _this.current.handleMousedown(event)
         })
         document.addEventListener("mousemove", function (event) {
-            currentState.handleMousemove(event)
+            _this.current.handleMousemove(event)
         })
         document.getElementById("run-algorithm").addEventListener("click", function (event) {
-            currentState.handleRunAlgorithm(event)
+            _this.current.handleRunAlgorithm(event)
         })
         let mazes = document.getElementsByClassName("create-maze")
         for (let i = 0; i < mazes.length; i++) {
             mazes[i].addEventListener("click", function (event) {
-                currentState.handleCreateMaze(event)
+                _this.current.handleCreateMaze(event)
             })
         }
-        currentState.go();
+        _this.current.start();
     };
 }
 
-var Default = function (state) {
-    this.state = state
+class Default {
+    constructor(context) {
+        this.context = context
+    }
 
-    Default.prototype.toString = function toString() {
+    start(event) {
+
+    }
+
+
+    toString() {
         return "Default"
     }
 
-    this.go = function () {
+
+    handleMousedown(event) {
+        this.context.change(Dragging, event, event.target.cloneNode())
+    }
+
+    handleMouseup(event) {
 
     }
 
-
-    this.handleMousedown = function (event) {
-        state.change(new Dragging(state, event))
-    }
-
-    this.handleMouseup = function (event) {
+    handleMousemove(event) {
 
     }
 
-    this.handleMousemove = function (event) {
-
+    handleRunAlgorithm(event) {
+        this.context.change(Pathfinding)
     }
 
-    this.handleRunAlgorithm = function (event) {
-        state.change(new Pathfinding(state))
+    handleCreateMaze(event) {
+        this.context.change(CreatingMaze, event.target.id)
     }
-
-    this.handleCreateMaze = function (event) {
-        state.change(new CreatingMaze(state, event.target.id))
-    }
-
-
 }
 
-var Dragging = function (state, previousEvent = null, firstTarget = null, previousTarget = null, previousClassName) {
-    this.state = state
-    this.firstTarget = firstTarget
-    this.previousTarget = previousTarget
-    this.previousClassName = previousClassName
+class Dragging {
+    constructor(context) {
+        this.context = context
+        this.previousTarget = null
+
+    }
 
 
-    Dragging.prototype.toString = function toString() {
+    toString() {
         return "Dragging"
     }
 
-    this.go = function () {
-        this.previousClassName = this.previousClassName ? this.previousClassName : "cell empty"
-        if (previousEvent) { // In case we call from Default
-            this.firstTarget = previousEvent.target.cloneNode()
-            this.previousTarget = previousEvent.target
-
-            if (isCell(previousEvent.target)) { // Single click
-                state.change(new Drawing(state, this.firstTarget, this.previousTarget, this.previousClassName))
-            }
+    start(event, firstTarget, previousTarget) {
+        this.previousTarget = previousTarget
+        if (event && isCell(event.target)) {
+            this.context.change(Drawing, event, firstTarget)
         }
     }
 
-    this.handleMouseup = function () {
-        state.change(new Default(state))
+    handleMouseup = function () {
+        this.context.change(Default)
     }
 
-    this.handleMousedown = function (event) {
+    handleMousedown(event) {
     }
 
-    this.handleMousemove = function (event) {
+    handleMousemove(event) {
         if (isCell(event.target)) {
-            state.change(new Drawing(state, this.firstTarget, this.previousTarget, this.previousClassName))
+            event = this.previousTarget ? null : event
+            this.context.change(Drawing, event, this.previousTarget)
         }
     }
 
-    this.handleRunAlgorithm = function (event) {
+    handleRunAlgorithm = function (event) {
 
     }
 
 }
 
-var Drawing = function (state, firstTarget, previousTarget, previousClassName) {
-    this.state = state
-    this.firstTarget = firstTarget
-    this.previousTarget = previousTarget
-    this.previousClassName = previousClassName
+class Drawing {
+    constructor(context) {
+        this.context = context
+        this.firstTarget = null
+        this.previousTarget = null
+        this.previousClassName = "cell empty"
 
-    Drawing.prototype.toString = function toString() {
+    }
+
+    toString() {
         return "Drawing"
     }
 
-    this.go = function () {
-        drawWalls(previousTarget)
+    start(event, firstTarget) {
+        if (event) {
+            this.drawWalls(event.target)
+            this.previousTarget = event.target
+
+        }
+
+
+        this.firstTarget = firstTarget ? firstTarget : event.target
+
     }
 
 
-    this.handleMouseup = function () {
-        state.change(new Default(state))
-    }
-
-    this.handleMousedown = function () {
+    handleMouseup = function () {
+        this.context.change(Default)
 
     }
 
-    this.handleMousemove = function (event) {
-        if (!isCell(event.target)) {
-            state.change(new Dragging(state, null, this.firstTarget, this.previousTarget, this.previousClassName))
+    handleMousedown = function () {
+
+    }
+
+    handleMousemove(event) {
+        if (!isCell(event.target) && event.target.id !== "board") {
+            this.context.change(Dragging, null, this.firstTarget, this.previousTarget.cloneNode())
         }
 
         if (isDraggable(this.firstTarget)) {
+            let _this = this
             this.movingDraggable(event.target).then(function (target) {
-                if (target) {
-                    target.className = firstTarget.className
+                if (target !== undefined) {
+                    target.className = _this.firstTarget.className
                 }
             })
         } else {
-            drawWalls(event.target)
+            this.drawWalls(event.target)
         }
+
+
     }
 
-    this.handleRunAlgorithm = function (event) {
+    handleRunAlgorithm = function (event) {
 
     }
 
 
-    async function drawWalls(target) {
+    async drawWalls(target) {
         if (target !== this.previousTarget && (isEmpty(target) || (toggle && isWall(target)))) {
             this.previousTarget = target
-            target.classList.toggle("wall")
-            target.classList.toggle("empty")
+            this.previousTarget.classList.toggle("wall")
+            this.previousTarget.classList.toggle("empty")
         }
 
     }
 
-    this.movingDraggable = async function (target) {
+    async movingDraggable(target) {
         if (this.previousTarget !== target && (isWall(target) || isEmpty(target))) {
             this.previousTarget.className = this.previousClassName
-            this.previousClassName = target.className
             this.previousTarget = target
+            this.previousClassName = this.previousTarget.className
             return target
         }
     }
 }
 
-var Pathfinding = function (state) {
-    this.state = state
-    let stopped
+class Pathfinding {
+    constructor(context) {
+        this.context = context
+        this.stopped = false
+    }
 
-    Pathfinding.prototype.toString = function toString() {
+
+    toString = function toString() {
         return "Pathfinding"
     }
 
-    this.go = function () {
+    start() {
         document.getElementById("run-algorithm").innerText = "Stop Algorithm"
-        dijkstra().then(path => shortestPath(path)).then(shortest => drawPath(shortest)).then(function (e) {
+        let _this = this
+        this.dijkstra().then(path => this.shortestPath(path)).then(shortest => this.drawPath(shortest)).then(function (e) {
             document.getElementById("run-algorithm").innerText = "Run Algorithm"
-            if (!stopped) {
-                state.change(new Recalculating(state))
+            if (!_this.stopped) {
+                _this.context.change(Recalculating)
             } else {
                 resetVisited()
-                state.change(new Default(state))
+                _this.stopped = false
+                _this.context.change(Default)
             }
         })
     }
 
-    this.handleMousedown = function (event) {
+    handleMousedown(event) {
 
     }
 
-    this.handleMouseup = function (event) {
+    handleMouseup(event) {
 
     }
 
-    this.handleMousemove = function (event) {
+    handleMousemove(event) {
 
     }
 
-    this.handleRunAlgorithm = function (event) {
-        stopped = true
-
+    handleRunAlgorithm(event) {
+        this.stopped = true
     }
 
-    async function dijkstra() {
+
+    async dijkstra() {
         let distances = new Array(cells.length * cells[0].length).fill(Infinity)
         let visiteds = new Array(cells.length * cells[0].length).fill(false)
         let path = new Array(cells.length * cells[0].length).fill(false)
-        const source = getSource()
+        const source = this.getSource()
         distances[source] = 0
         while (!visiteds.every(Boolean)) {
-            if (stopped) {
+            if (this.stopped) {
                 return []
             }
             let minDistance = Math.min(...distances.filter(function (elem, i) { // Only gets min from unvisited
@@ -251,10 +276,10 @@ var Pathfinding = function (state) {
 
 
             visiteds[u] = true
-            let neighbors = getNeighbors(u, visiteds)
+            let neighbors = this.getNeighbors(u, visiteds)
             for (let i = 0; i < neighbors.length; i++) {
                 let neighbor = neighbors[i]
-                let pos = singleToDoubleIndex(neighbor)
+                let pos = this.singleToDoubleIndex(neighbor)
                 if (isEnd(cells[pos.y][pos.x])) {
                     path[neighbor] = u
                     return path
@@ -271,10 +296,10 @@ var Pathfinding = function (state) {
         return path
     }
 
-    function shortestPath(path) {
+    shortestPath(path) {
         let S = []
-        let u = getTarget()
-        let source = getSource()
+        let u = this.getTarget()
+        let source = this.getSource()
         if (path[u] || u === source) {
             while (path[u] !== false) {
                 S.unshift(u)
@@ -284,54 +309,59 @@ var Pathfinding = function (state) {
         return S
     }
 
-    function drawPath(path) {
+    drawPath(path) {
         for (let i = 0; i < path.length - 1; i++) {
-            let pos = singleToDoubleIndex(path[i])
+            let pos = this.singleToDoubleIndex(path[i])
             cells[pos.y][pos.x].classList.add("path")
         }
     }
 
-    function findFirstFromClass(func) {
+    findFirstFromClass(func) {
         for (let i = 0; i < ROWS; i++) {
             for (let j = 0; j < COLUMNS; j++) {
                 if (func(cells[i][j])) {
-                    return doubleToSingleDigit(i, j)
+                    return this.doubleToSingleDigit(i, j)
                 }
             }
 
         }
     }
 
-    function getSource() {
-        return findFirstFromClass(isStart);
-    }
 
-    function getTarget() {
-        return findFirstFromClass(isEnd);
+    getSource() {
+        return this.findFirstFromClass(isStart);
     }
 
 
-    function doubleToSingleDigit(i, j) {
+    getTarget() {
+        return this.findFirstFromClass(isEnd);
+    }
+
+
+    doubleToSingleDigit(i, j) {
         return i * COLUMNS + j
     }
 
-    function singleToDoubleIndex(i) {
+
+    singleToDoubleIndex(i) {
         return {x: i % COLUMNS, y: Math.trunc(i / COLUMNS)}
     }
 
-    function getNeighbors(node, visiteds) {
+
+    getNeighbors(node, visiteds) {
         let north = node - COLUMNS
         let south = node + COLUMNS
-        let pos = singleToDoubleIndex(node)
+        let pos = this.singleToDoubleIndex(node)
         let east = pos.x !== cells[0].length - 1 ? node + 1 : node
         let west = pos.x !== 0 ? node - 1 : node
-        return getValidNeighbors([north, south, east, west], visiteds)
+        return this.getValidNeighbors([north, south, east, west], visiteds)
     }
 
-    function getValidNeighbors(neighbors, visiteds) {
+
+    getValidNeighbors(neighbors, visiteds) {
         let valids = []
         for (let i = 0; i < neighbors.length; i++) {
-            let pos = singleToDoubleIndex(neighbors[i])
+            let pos = this.singleToDoubleIndex(neighbors[i])
             if (isInside(pos.x, pos.y) && !visiteds[neighbors[i]] && !isVisited(cells[pos.y][pos.x]) && !isWall(cells[pos.y][pos.x])) {
                 valids.push(neighbors[i])
             }
@@ -341,85 +371,91 @@ var Pathfinding = function (state) {
 
 }
 
-var Recalculating = function (state) {
-    this.state = state
+class Recalculating {
+    constructor(context) {
+        this.context = context
+    }
 
-    Recalculating.prototype.toString = function toString() {
+    toString() {
         return "Recalculating"
     }
 
-    this.go = function () {
+    start() {
 
     }
 
 
-    this.handleMouseup = function () {
+    handleMouseup() {
 
     }
 
-    this.handleMousedown = function (event) {
-        target = event.target
+    handleMousedown(event) {
+        let target = event.target
         if (isDraggable(target)) {
-            console.log("recalculating")
+
         } else if (isCell(target)) {
             resetVisited()
-            state.change(new Dragging(state, event, event.target, event.target))
+            this.context.change(Dragging, event, event.target, event.target)
         } else {
-            state.change(new Default(state))
+            this.context.change(Default)
         }
     }
 
-    this.handleMousemove = function (event) {
+    handleMousemove(event) {
 
     }
 
-    this.handleRunAlgorithm = function (event) {
+    handleRunAlgorithm(event) {
 
     }
 }
 
 
-var CreatingMaze = function (state, maze) {
-    this.state = state
+class CreatingMaze {
+    constructor(context) {
+        this.context = context
+        this.maze = null
+    }
 
 
-    CreatingMaze.prototype.toString = function toString() {
+    toString() {
         return "CreatingMaze"
     }
 
-    this.go = function () {
+    start(maze) {
         resetBoard()
-        createMaze().then(e => contextState.change(new Default(contextState)))
+        this.maze = maze
+        this.createMaze().then(e => this.context.change(Default))
 
     }
 
-    this.handleMouseup = function () {
+    handleMouseup = function () {
     }
 
-    this.handleMousedown = function () {
-
-    }
-
-    this.handleMousemove = function (event) {
+    handleMousedown = function () {
 
     }
 
-    this.handleRunAlgorithm = function (event) {
+    handleMousemove = function (event) {
 
     }
 
-    async function createMaze() {
-        if (maze === "create-random") {
-            await createRandom()
-        } else if (maze === "create-recursion") {
-            await createRecursive(true, 0, COLUMNS - 1, 0, ROWS - 1)
+    handleRunAlgorithm = function (event) {
+
+    }
+
+    async createMaze() {
+        if (this.maze === "create-random") {
+            await this.createRandom()
+        } else if (this.maze === "create-recursion") {
+            await this.createRecursive(true, 0, COLUMNS - 1, 0, ROWS - 1)
         }
     }
 
-    async function createRandom() {
+    async createRandom() {
         for (let i = 0; i < ROWS; i++) {
             for (let j = 0; j < COLUMNS; j++) {
-                if (randomRange(0, 4) === 0) {
+                if (Math.trunc(this.randomRange(0, 4)) === 0) {
                     await sleep(2.5)
                     let target = cells[i][j]
                     target.classList.toggle("wall")
@@ -430,25 +466,25 @@ var CreatingMaze = function (state, maze) {
     }
 
 
-    async function createRecursive(h, minX, maxX, minY, maxY) { // TODO Not working properly
-        console.log("Iteration", h, minX, maxX, minY, maxY)
+    async createRecursive(h, minX, maxX, minY, maxY) { // TODO Fix it? It generates impossible mazes many times
         if (h && maxX - minX >= 1) {
-            let y = Math.floor(randomRange(minY, maxY) / 2) * 2
-            await addHWall(minX, maxX, y)
-            await createRecursive(!h, minX, maxX, minY, y - 1)
-            await createRecursive(!h, minX, maxX, y + 1, maxY)
-        } else if (!h && maxY - minY >= 1) {
-            let x = Math.floor(randomRange(minX, maxX) / 2) * 2
+            let y = Math.floor(this.randomRange(minY, maxY) / 2) * 2
 
-            await addVWall(minY, maxY, x)
-            await createRecursive(!h, minX, x - 1, minY, maxY)
-            await createRecursive(!h, x + 1, maxX, minY, maxY)
+            await this.addHWall(minX, maxX, y)
+            await this.createRecursive(!h, minX, maxX, minY, y - 1)
+            await this.createRecursive(!h, minX, maxX, y + 1, maxY)
+        } else if (!h && maxY - minY >= 1) {
+            let x = Math.floor(this.randomRange(minX, maxX) / 2) * 2
+
+            await this.addVWall(minY, maxY, x)
+            await this.createRecursive(!h, minX, x - 1, minY, maxY)
+            await this.createRecursive(!h, x + 1, maxX, minY, maxY)
         }
 
     }
 
-    async function addHWall(minX, maxX, y) {
-        let hole = getHole(minX, maxX)
+    async addHWall(minX, maxX, y) {
+        let hole = this.getHole(minX, maxX)
         for (let i = minX; i <= maxX; i++) {
             if (i !== hole) {
                 await sleep(5)
@@ -461,8 +497,8 @@ var CreatingMaze = function (state, maze) {
         }
     }
 
-    async function addVWall(minY, maxY, x) {
-        let hole = getHole(minY, maxY);
+    async addVWall(minY, maxY, x) {
+        let hole = this.getHole(minY, maxY);
         for (let i = minY; i <= maxY; i++) {
             if (i !== hole) {
                 await sleep(5)
@@ -474,142 +510,12 @@ var CreatingMaze = function (state, maze) {
         }
     }
 
-    function getHole(min, max) {
-        return Math.floor(randomRange(min, max) / 2) * 2 + 1
+    getHole(min, max) {
+        return Math.floor(this.randomRange(min, max) / 2) * 2 + 1
     }
 
 
-    //     console.log(x, y, width, height, isHorizontal)
-    //     await sleep(2500)
-    //     console.log(width, height)
-    //     if (width < 2 || height < 2) {
-    //         console.log("returned")
-    //         return
-    //     }
-    //
-    //     let wx = x + (isHorizontal ? 0 : randomRange(0, width - 2))
-    //     let wy = y + (isHorizontal ? randomRange(0, height - 2) : 0)
-    //
-    //     let px = wx + (isHorizontal ? randomRange(0, width) : 0)
-    //     let py = wy + (isHorizontal ? 0 : randomRange(0, height))
-    //
-    //     let dx = isHorizontal ? 1 : 0
-    //     let dy = isHorizontal ? 0 : 1
-    //
-    //     let length = isHorizontal ? width : height
-    //
-    //     let dir = isHorizontal ? 1 : 2
-    //
-    //     for (let i = 0; i < length; i++) {
-    //         if (wx !== px || wy !== py) {
-    //             await sleep(20)
-    //             let target = cells[wy][wx]
-    //             target.classList.toggle("wall")
-    //             target.classList.toggle("empty")
-    //         }
-    //         wx += dx
-    //         wy += dy
-    //     }
-    //
-    //     let nx = x
-    //     let ny = y
-    //     let w
-    //     let h
-    //
-    //     if (isHorizontal) {
-    //         w = width
-    //         h = wy - y
-    //     } else {
-    //         w = wx - x
-    //         h = height
-    //     }
-    //     await createRecursive(nx, ny, w, h, choose_orientation(w, h))
-    //
-    //     if (isHorizontal) {
-    //         nx = x
-    //         ny = wy + 1
-    //         w = width
-    //         h = y + height - wy - 1
-    //     } else {
-    //         nx = wx + 1
-    //         ny = y
-    //         w = x + width - wx - 1
-    //         h = height
-    //     }
-    //
-    //     await createRecursive(nx, ny, w, h, choose_orientation(w, h))
-    //
-    //
-    // }
-    //
-    function choose_orientation(w, h) {
-        if (w < h) {
-            return true
-        }
-        if (h < w) {
-            return false
-        } else {
-            return randomRange(0, 2) === 0
-        }
-    }
-
-    // if (isHorizontal && maxHeight - minHeight > 3) {
-    //     let wallIdx = randomRange(minHeight, maxHeight)
-    //     let holeIdx = randomRange(minWidth, maxWidth)
-    //     for (let i = minWidth - 1; i <= maxWidth; i++) {
-    //         if (i != holeIdx && isEmpty(cells[wallIdx][i])) {
-    //             await sleep(10)
-    //             target = cells[wallIdx][i]
-    //             target.classList.toggle("wall")
-    //             target.classList.toggle("empty")
-    //         }
-    //     }
-    //     await createMaze(minWidth, maxWidth, minHeight, wallIdx - 1, !isHorizontal)
-    //     await createMaze(minWidth, maxWidth, wallIdx + 2, maxHeight, !isHorizontal)
-    //
-    // } else if (maxWidth - minWidth > 3) {
-    //     let wallIdx = randomRange(minWidth, maxWidth)
-    //     let holeIdx = randomRange(minHeight, maxHeight)
-    //     for (let i = minHeight - 1; i <= maxHeight; i++) {
-    //         if (i != holeIdx && isEmpty(cells[i][wallIdx])) {
-    //             await sleep(10)
-    //             target = cells[i][wallIdx]
-    //             target.classList.toggle("wall")
-    //             target.classList.toggle("empty")
-    //         }
-    //     }
-    //     await createMaze(minWidth, wallIdx - 1, minHeight, maxHeight, !isHorizontal)
-    //     await createMaze(wallIdx + 2, maxWidth, minHeight, maxHeight, !isHorizontal)
-    // }
-    // if (Math.random() * 2 < 1) { // Horizontal cut
-    // if (true) {
-    //     var wallIdx = Math.round(Math.random() * height);
-    //     var holeIdx = Math.round(Math.random() * width);
-    //     for (let i = 0; i < COLUMNS; i++) {
-    //         if (i != holeIdx && isEmpty(cells[wallIdx][i])) {
-    //
-    //         }
-    //     }
-    //     console.log(width, wallIdx - 1, offset)
-    //     await createMaze(width, wallIdx, offset)
-    //     await createMaze(width, wallIdx, {x: offset.x, y: offset.y + wallIdx + 1})
-    // }
-    // } else { // Vertical cut
-    //     var wallIdx = Math.round(Math.random() * COLUMNS);
-    //     var holeIdx = Math.round(Math.random() * ROWS);
-    //     for (let i = 0; i < ROWS; i++) {
-    //         if (i != holeIdx && isEmpty(cells[i][wallIdx])) {
-    //             await sleep(25)
-    //             target = cells[i][wallIdx]
-    //             target.classList.toggle("wall")
-    //             target.classList.toggle("empty")
-    //         }
-    //     }
-    // }
-
-    // }
-
-    function randomRange(min, max) {
+    randomRange(min, max) {
         return Math.random() * (max - min + 1) + min
     }
 
@@ -657,7 +563,7 @@ document.addEventListener("keypress", function (e) {
     }
     if (e.key === 'r') {
         resetBoard()
-        contextState.change(new Default(contextState))
+        contextState.change(Default)
 
     }
 })
@@ -716,6 +622,7 @@ function resetVisited() {
 
 window.onload = function () {
     initializeBoard()
-    contextState = new Context()
+    contextState = new Context(cells)
     contextState.start()
+
 }
