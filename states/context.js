@@ -14,6 +14,7 @@ class Context {
         this.toggleDraw = false
         this.ROWS = cells.length
         this.COLUMNS = cells[0].length
+        this.algorithm = "algorithm-dijkstra"
     }
 
     toggle() {
@@ -43,22 +44,34 @@ class Context {
             clearSelection()
             _this.current.handleMouseup(event)
         })
+
         document.addEventListener("mousedown", function (event) {
             clearSelection()
             _this.current.handleMousedown(event)
         })
+
         document.addEventListener("mousemove", function (event) {
             _this.current.handleMousemove(event)
         })
+
         document.getElementById("run-algorithm").addEventListener("click", function (event) {
             _this.current.handleRunAlgorithm(event)
         })
+
         let mazes = document.getElementsByClassName("create-maze")
         for (let i = 0; i < mazes.length; i++) {
             mazes[i].addEventListener("click", function (event) {
                 _this.current.handleCreateMaze(event)
             })
         }
+
+        let algorithms = document.getElementsByClassName("pick-algorithm")
+        for (let i = 0; i < algorithms.length; i++) {
+            algorithms[i].addEventListener("click", function (event) {
+                _this.algorithm = algorithms[i].id
+            })
+        }
+
         _this.current.start();
     };
 }

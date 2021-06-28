@@ -96,10 +96,10 @@ body {
     }
 }
 
+
+
 .cell.visited {
     background-color: #2055da;
-    opacity: 0.5;
-    animation: pop 0.5s ease-out;
 }
 
 .cell.path {
