@@ -6,7 +6,6 @@ class Dragging {
     constructor(context) {
         this.context = context
         this.previousTarget = null
-
     }
 
     toString() {

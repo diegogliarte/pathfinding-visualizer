@@ -1,23 +1,19 @@
 import {Default} from "./default.js"
 import {Dragging} from "./dragging.js"
-import {isCell, isDraggable, resetVisited} from "../utils.js";
+import {isCell, isDraggable, isEmpty, isWall, resetVisited} from "../utils.js";
+import {Drawing} from "./drawing.js";
 
 class Recalculating {
     constructor(context) {
         this.context = context
     }
 
-    toString() {
-        return "Recalculating"
-    }
-
     start() {
 
     }
 
-
-    handleMouseup() {
-
+    toString() {
+        return "Recalculating"
     }
 
     handleMousedown(event) {
@@ -36,9 +32,6 @@ class Recalculating {
 
     }
 
-    handleRunAlgorithm(event) {
-
-    }
 }
 
 export {Recalculating}

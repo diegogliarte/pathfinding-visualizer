@@ -21,8 +21,6 @@ class Drawing {
             this.previousTarget = event.target
 
         }
-
-
         this.firstTarget = firstTarget ? firstTarget : event.target
 
     }
@@ -30,7 +28,6 @@ class Drawing {
 
     handleMouseup = function () {
         this.context.change(Default)
-
     }
 
     handleMousedown = function () {

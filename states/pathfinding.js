@@ -28,8 +28,7 @@ class Pathfinding {
         let _this = this
 
         this.algorithm.solve().then(path => this.algorithm.shortestPath(path)).then(shortest => this.algorithm.drawPath(shortest)).then(function (e) {
-            document.getElementById("run-algorithm").innerText = "Run Algorithm"
-            _this.context.change(Recalculating)
+            _this.context.change(Recalculating, _this.algorithm)
         })
     }
 

@@ -15,6 +15,7 @@ class Context {
         this.ROWS = cells.length
         this.COLUMNS = cells[0].length
         this.algorithm = "algorithm-dijkstra"
+        this.maze = "create-random"
     }
 
     toggle() {
@@ -54,23 +55,47 @@ class Context {
             _this.current.handleMousemove(event)
         })
 
-        document.getElementById("run-algorithm").addEventListener("click", function (event) {
+        document.getElementById("button-run-algorithm").addEventListener("click", function(event) {
             _this.current.handleRunAlgorithm(event)
+        })
+
+        let algorithms = document.getElementsByClassName("pick-algorithm")
+        for (let i = 0; i < algorithms.length; i++) {
+            algorithms[i].addEventListener("click", function (event) {
+                for (let j = 0; j < algorithms.length; j++) {
+                    if (algorithms[i] === algorithms[j]) {
+                        _this.algorithm = algorithms[i].id
+                        algorithms[i].classList.add("picked")
+                    } else {
+                        algorithms[j].classList.remove("picked")
+                    }
+                }
+            })
+        }
+
+
+        // document.getElementById("run-algorithm").addEventListener("click", function (event) {
+        //     _this.current.handleRunAlgorithm(event)
+        // })
+
+        document.getElementById("button-create-maze").addEventListener("click", function(event) {
+            _this.current.handleCreateMaze(event)
         })
 
         let mazes = document.getElementsByClassName("create-maze")
         for (let i = 0; i < mazes.length; i++) {
             mazes[i].addEventListener("click", function (event) {
-                _this.current.handleCreateMaze(event)
+                for (let j = 0; j < mazes.length; j++) {
+                    if (mazes[i] === mazes[j]) {
+                        _this.maze = mazes[i].id
+                        mazes[i].classList.add("picked")
+                    } else {
+                        mazes[j].classList.remove("picked")
+                    }
+                }
             })
         }
 
-        let algorithms = document.getElementsByClassName("pick-algorithm")
-        for (let i = 0; i < algorithms.length; i++) {
-            algorithms[i].addEventListener("click", function (event) {
-                _this.algorithm = algorithms[i].id
-            })
-        }
 
         _this.current.start();
     };

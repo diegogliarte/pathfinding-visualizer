@@ -13,23 +13,24 @@
 <body>
 <div class="wrapper">
     <div class="wrapper info">
-        <div class="subtitles">Create maze</div>
-        <div class="wrapper-options">
-            <button class="options create-maze" id="create-random">Random</button>
-            <button class="options create-maze" id="create-recursion">Recursive Division</button>
-            <button class="options create-maze" id="create-kruskal">Kruskal</button>
+        <div class="dropdown">
+            <button class="dropbtn" id="button-create-maze">Click to create maze</button>
+            <div class="dropdown-content">
+                <a class="create-maze " id="create-random">Random</a>
+                <a class="create-maze" id="create-recursive">Recursive Division</a>
+                <a class="create-maze picked" id="create-kruskal">Kruskal</a>
+            </div>
         </div>
 
     </div>
-    <button id="run-algorithm">
-        Run Algorithm
-    </button>
     <div class="wrapper info">
-        <div class="subtitles">Pick Algorithm</div>
-        <div class="wrapper-options">
-            <button class="options pick-algorithm" id="algorithm-dijkstra">Dijkstra</button>
-            <button class="options pick-algorithm" id="algorithm-dijkstra8Way">Dijkstra 8-Way</button>
-            <button class="options pick-algorithm" id="algorithm-a*">A*</button>
+        <div class="dropdown">
+            <button class="dropbtn" id="button-run-algorithm">Click to start pathfinding</button>
+            <div class="dropdown-content">
+                <a class="pick-algorithm picked" id="algorithm-dijkstra">Djikstra</a>
+                <a class="pick-algorithm" id="algorithm-dijkstra8Way">Dijkstra 8-Way</a>
+                <a class="pick-algorithm" id="algorithm-a*">A*</a>
+            </div>
         </div>
     </div>
 </div>

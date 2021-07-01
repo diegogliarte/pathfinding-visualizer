@@ -5,6 +5,9 @@ class Dijkstra {
         this.context = context
         this.stopped = false
         this.eigthWay = eightWay
+        this.distances = new Array(this.context.COLUMNS * this.context.ROWS).fill(Infinity)
+        this.visiteds = new Array(this.context.COLUMNS * this.context.ROWS).fill(false)
+
     }
 
     stop() {
@@ -12,29 +15,28 @@ class Dijkstra {
     }
 
     async solve() {
-        let distances = new Array(this.context.cells.length * this.context.cells[0].length).fill(Infinity)
-        let visiteds = new Array(this.context.cells.length * this.context.cells[0].length).fill(false)
         let path = new Array(this.context.cells.length * this.context.cells[0].length).fill(false)
         const source = this.getSource()
-        distances[source] = 0
+        this.distances[source] = 0
         let u
-        while (!visiteds.every(Boolean)) {
+        const _this = this
+        while (!this.visiteds.every(Boolean)) {
             if (this.stopped) {
                 return []
             }
-            let minDistance = Math.min(...distances.filter(function (elem, i) { // Only gets min from unvisited
-                return !visiteds[i]
+            let minDistance = Math.min(...this.distances.filter(function (elem, i) { // Only gets min from unvisited
+                return !_this.visiteds[i]
             }))
-            for (let i = 0; i < distances.length; i++) { // Find the min
-                if (distances[i] === minDistance && !visiteds[i]) {
+            for (let i = 0; i < this.distances.length; i++) { // Find the min
+                if (this.distances[i] === minDistance && !this.visiteds[i]) {
                     u = i
                     break
                 }
             }
 
 
-            visiteds[u] = true
-            let neighbors = this.eigthWay ? this.getNeighborsEightWay(u, visiteds) : this.getNeighbors(u, visiteds)
+            this.visiteds[u] = true
+            let neighbors = this.eigthWay ? this.getNeighborsEightWay(u, this.visiteds) : this.getNeighbors(u, this.visiteds)
             for (let i = 0; i < neighbors.length; i++) {
                 let neighbor = neighbors[i]
                 let pos = this.singleToDoubleIndex(neighbor[0])
@@ -43,8 +45,8 @@ class Dijkstra {
                     return path
                 }
 
-                if (distances[neighbor[0]] > distances[u] + 1) {
-                    distances[neighbor[0]] = distances[u] + neighbor[1]
+                if (this.distances[neighbor[0]] > this.distances[u] + 1) {
+                    this.distances[neighbor[0]] = this.distances[u] + neighbor[1]
                     path[neighbor[0]] = u
                     this.context.cells[pos.y][pos.x].classList.add("visited")
                     await sleep(1);

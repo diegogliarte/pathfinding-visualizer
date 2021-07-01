@@ -36,8 +36,6 @@ function initializeBoard() {
 }
 
 
-
-
 document.addEventListener("keypress", function (e) {
     if (e.key === 't') {
         contextState.toggle()
