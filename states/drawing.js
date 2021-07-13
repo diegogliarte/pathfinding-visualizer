@@ -26,11 +26,11 @@ class Drawing {
     }
 
 
-    handleMouseup = function () {
+    handleMouseup() {
         this.context.change(Default)
     }
 
-    handleMousedown = function () {
+    handleMousedown() {
 
     }
 
@@ -49,11 +49,13 @@ class Drawing {
         } else {
             this.drawWalls(event.target)
         }
-
-
     }
 
     handleRunAlgorithm = function (event) {
+
+    }
+
+    handleReset(event) {
 
     }
 

@@ -36,6 +36,10 @@ class Default {
     handleCreateMaze(event) {
         this.context.change(CreatingMaze, event.target.id)
     }
+
+    handleReset(event) {
+
+    }
 }
 
 export {Default}

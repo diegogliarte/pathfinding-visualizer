@@ -1,8 +1,7 @@
 import {Default} from "./default.js"
-import {isDraggable, resetBoard, sleep} from "../utils.js";
+import {resetBoard} from "../utils.js";
 import {createRandom} from "../algorithms/mazes/random.js";
 import {createRecursive} from "../algorithms/mazes/recursive.js";
-import {kruskal} from "../algorithms/mazes/kruskal.js";
 
 class CreatingMaze {
     constructor(context) {
@@ -21,18 +20,22 @@ class CreatingMaze {
         this.createMaze().then(e => this.context.change(Default))
     }
 
-    handleMouseup = function () {
+    handleMouseup() {
     }
 
-    handleMousedown = function () {
-
-    }
-
-    handleMousemove = function (event) {
+    handleMousedown() {
 
     }
 
-    handleRunAlgorithm = function (event) {
+    handleMousemove(event) {
+
+    }
+
+    handleRunAlgorithm(event) {
+
+    }
+
+    handleReset(event) {
 
     }
 
@@ -41,8 +44,6 @@ class CreatingMaze {
             await createRandom(this)
         } else if (this.maze === "create-recursive") {
             await createRecursive(true, 0, this.context.COLUMNS - 1, 0, this.context.ROWS - 1, this)
-        } else if (this.maze === "create-kruskal") {
-            await kruskal(this)
         }
     }
 }

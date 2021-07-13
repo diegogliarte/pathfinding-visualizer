@@ -27,8 +27,11 @@ class Pathfinding {
 
         let _this = this
 
-        this.algorithm.solve().then(path => this.algorithm.shortestPath(path)).then(shortest => this.algorithm.drawPath(shortest)).then(function (e) {
-            _this.context.change(Recalculating, _this.algorithm)
+        this.algorithm.solve().then(path => this.algorithm.shortestPath(path)).then(shortest =>
+            this.algorithm.drawPath(shortest)).then(function (e) {
+                if (!(_this.context.current instanceof Default)) {
+                    _this.context.change(Recalculating, _this.algorithm)
+                }
         })
     }
 
@@ -50,7 +53,9 @@ class Pathfinding {
         this.context.change(Default)
     }
 
-
+    handleReset(event) {
+        this.algorithm.stop()
+    }
 }
 
 export {Pathfinding}

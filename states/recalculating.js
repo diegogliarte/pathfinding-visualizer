@@ -1,7 +1,6 @@
 import {Default} from "./default.js"
 import {Dragging} from "./dragging.js"
-import {isCell, isDraggable, isEmpty, isWall, resetVisited} from "../utils.js";
-import {Drawing} from "./drawing.js";
+import {isCell, isDraggable, resetVisited} from "../utils.js";
 
 class Recalculating {
     constructor(context) {
@@ -29,6 +28,14 @@ class Recalculating {
     }
 
     handleMousemove(event) {
+
+    }
+
+    handleMouseup(event) {
+
+    }
+
+    handleReset(event) {
 
     }
 

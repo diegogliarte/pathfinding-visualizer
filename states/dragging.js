@@ -19,7 +19,7 @@ class Dragging {
         }
     }
 
-    handleMouseup = function () {
+    handleMouseup() {
         this.context.change(Default)
     }
 
@@ -33,7 +33,11 @@ class Dragging {
         }
     }
 
-    handleRunAlgorithm = function (event) {
+    handleRunAlgorithm(event) {
+
+    }
+
+    handleReset(event) {
 
     }
 }

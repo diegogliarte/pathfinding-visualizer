@@ -4,7 +4,7 @@ import {Drawing} from "./drawing.js"
 import {Pathfinding} from "./pathfinding.js"
 import {Recalculating} from "./recalculating.js"
 import {CreatingMaze} from "./creatingmaze.js"
-import {clearSelection} from "../utils.js";
+import {clearSelection, resetBoard} from "../utils.js";
 
 class Context {
     constructor(cells) {
@@ -19,13 +19,12 @@ class Context {
     }
 
     toggle() {
-        console.log(this.toggleDraw)
         this.toggleDraw = !this.toggleDraw
     }
 
     change(state, event, firstTarget = null, previousTarget = null) {
         let newState = this.getState(state)
-        console.log(this.current.toString(), " -> ", newState.toString())
+        // console.log(this.current.toString(), " -> ", newState.toString())
         this.current = newState
         this.current.start(event, firstTarget, previousTarget);
     };
@@ -55,7 +54,7 @@ class Context {
             _this.current.handleMousemove(event)
         })
 
-        document.getElementById("button-run-algorithm").addEventListener("click", function(event) {
+        document.getElementById("button-run-algorithm").addEventListener("click", function (event) {
             _this.current.handleRunAlgorithm(event)
         })
 
@@ -78,7 +77,7 @@ class Context {
         //     _this.current.handleRunAlgorithm(event)
         // })
 
-        document.getElementById("button-create-maze").addEventListener("click", function(event) {
+        document.getElementById("button-create-maze").addEventListener("click", function (event) {
             _this.current.handleCreateMaze(event)
         })
 
@@ -96,7 +95,16 @@ class Context {
             })
         }
 
-
+        document.addEventListener("keypress", function (e) {
+            if (e.key === 't') {
+                _this.toggle()
+            }
+            if (e.key === 'r') {
+                _this.current.handleReset(event)
+                _this.change(Default)
+                resetBoard(_this.cells, _this.ROWS, _this.COLUMNS)
+            }
+        })
         _this.current.start();
     };
 }

@@ -1,12 +1,9 @@
 import {Context} from "./states/context.js"
-import {Default} from "./states/default.js";
-import {resetBoard} from "./utils.js";
 
 const COLUMNS = 50
 const ROWS = 20
 const cells = []
 let contextState
-
 
 
 function initializeStartingPoints() {
@@ -34,21 +31,6 @@ function initializeBoard() {
     initializeStartingPoints();
 
 }
-
-
-document.addEventListener("keypress", function (e) {
-    if (e.key === 't') {
-        contextState.toggle()
-    }
-    if (e.key === 'r') {
-        resetBoard(contextState.cells, contextState.ROWS, contextState.COLUMNS)
-        contextState.change(Default)
-
-    }
-})
-
-
-
 
 
 window.onload = function () {
